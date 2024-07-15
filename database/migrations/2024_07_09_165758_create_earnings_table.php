@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('earnings', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->decimal('amount', 10, 2); // Assuming amount can have up to 10 digits with 2 decimals
+            $table->decimal('amount', 10, 2); 
             $table->enum('description', ['telegram', 'direct', 'ad', 'level']);
             $table->timestamps();
 

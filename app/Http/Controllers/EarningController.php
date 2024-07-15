@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Earning;
+use Illuminate\Support\Facades\Auth;
 
 class EarningController extends Controller
 {
     public function index()
     {
-        $earnings = Earning::all();
+        $user = Auth::user();
+        $earnings = $user->earnings()->get();
+
         return response()->json($earnings);
     }
 

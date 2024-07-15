@@ -9,7 +9,11 @@ class AdminWithdrawalController extends Controller
 {
     public function listWithdrawalRequests()
     {
-        $withdrawals = Withdrawal::with('user')->get();
+        // Fetch only pending withdrawals along with user and bank account details
+        $withdrawals = Withdrawal::with(['user.bankAccount'])
+            ->where('status', 'pending')
+            ->get();
+
         return response()->json($withdrawals, 200);
     }
 

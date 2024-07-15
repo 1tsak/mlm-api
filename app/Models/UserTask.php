@@ -9,13 +9,8 @@ class UserTask extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id', 'task_id', 'completed_at'
-    ];
-
-    protected $dates = [
-        'completed_at'
-    ];
+    protected $table = 'user_tasks';
+    protected $fillable = ['user_id', 'task_id'];
 
     public function user()
     {
@@ -25,16 +20,5 @@ class UserTask extends Model
     public function task()
     {
         return $this->belongsTo(Task::class);
-    }
-
-    /**
-     * Scope a query to only include tasks that are not completed.
-     *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeIncomplete($query)
-    {
-        return $query->whereNull('completed_at');
     }
 }

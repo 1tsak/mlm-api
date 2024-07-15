@@ -15,41 +15,39 @@ class UserTaskController extends Controller
     {
         $user = Auth::user();
 
-        // Fetch only incomplete tasks for the user
-        $incompleteTasks = Task::whereDoesntHave('userTasks', function ($query) use ($user) {
-            $query->where('user_id', $user->id)->whereNotNull('completed_at');
-        })->get();
+        // Get tasks that are not completed by the user
+        $tasks = Task::whereNotIn('id', $user->tasks()->pluck('task_id')->toArray())->get();
 
-        return response()->json($incompleteTasks, 200);
+        return response()->json($tasks, 200);
     }
 
     public function completeTask(Request $request, Task $task)
     {
         $user = Auth::user();
 
+        // Check if the user has already completed the task
         if ($user->tasks()->where('task_id', $task->id)->exists()) {
             return response()->json(['error' => 'Task already completed'], 400);
         }
 
-        // Mark the task as completed for the user
-        $userTask = new UserTask([
-            'user_id' => $user->id,
-            'task_id' => $task->id,
-            'completed_at' => now(),
-        ]);
-        $userTask->save();
+        // Attach the task to the user
+        $user->tasks()->attach($task->id);
 
-        // Create Earning entry for the user
+        // Update user's balance with task reward
+        $user->balance += $task->reward;
+        $user->save();
+
+        // Create an Earning record for the user
         Earning::create([
             'user_id' => $user->id,
             'amount' => $task->reward,
-            'description' => 'ad',
+            'description' => 'ad', // Example: 'ad', 'direct', 'level' as per your requirement
         ]);
 
-        // Distribute earnings to referral levels
+        // Distribute earnings to referral levels if applicable
         $this->distributeEarnings($user, $task->reward);
 
-        return response()->json(['message' => 'Task completed'], 200);
+        return response()->json(['message' => 'Task completed successfully'], 200);
     }
 
     protected function distributeEarnings(User $user, $amount)
@@ -57,10 +55,11 @@ class UserTaskController extends Controller
         $referrer = $user->referrer;
 
         $level = 1;
-        $percentages = [0.10, 0.05, 0.03]; // Example percentages for 3 levels
+        $levelLimit =7;
+        $percentages = 0.1; // Example percentages for 3 levels
 
-        while ($referrer && $level <= count($percentages)) {
-            $earningAmount = $amount * $percentages[$level - 1];
+        while ($referrer && $level <= $levelLimit) {
+            $earningAmount = $amount * $percentages;
 
             Earning::create([
                 'user_id' => $referrer->id,

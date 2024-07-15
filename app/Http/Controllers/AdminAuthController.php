@@ -34,15 +34,21 @@ class AdminAuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-        if (Auth::guard('admin')->attempt($credentials)) {
-            $admin = Auth::guard('admin')->user();
-            $token = $admin->createToken('LaravelPassportToken', ['admin'])->accessToken;
-            return response()->json(['token' => $token], 200);
-        } else {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        $admin = Admin::where('email', $request->email)->first();
+
+        if (!$admin || !Hash::check($request->password, $admin->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
+
+        // Generate a token for the admin
+        $token = $admin->createToken('AdminToken')->accessToken;
+
+        return response()->json(['token' => $token], 200);
     }
     public function listUsers()
     {
