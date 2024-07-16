@@ -20,6 +20,7 @@ Route::post('/pre-login', [AuthController::class, 'preLogin']);
 Route::post('/pre-register', [AuthController::class, 'preRegister']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/check-mobile', [AuthController::class, 'checkMobile']);
+Route::post('send-otp', [AuthController::class, 'sendOtp']);
 
 
 Route::middleware('auth:api')->group(function () {

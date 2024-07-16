@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Earning;
+use Aws\Credentials\Credentials;
+use Aws\Sns\SnsClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -138,6 +140,63 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'Mobile number does not exist.'], 404);
+    }
+    public function sendOtp(Request $request)
+    {
+        // Allowed origins
+        $allowedOrigins = [
+            env('APP_URL'), // assuming this is the API domain
+            'https://globalspay.org', // add subdomains if necessary
+            'http://localhost:3000'
+        ];
+        $otp = rand(100000, 999999);
+
+        // Check the request origin
+        $origin = $request->headers->get('origin');
+        if (!in_array($origin, $allowedOrigins)) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'phone_number' => 'required|regex:/^[0-9]{10}$/',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        $phoneNumber = $request->input('phone_number');
+        $message = "Your otp for globalspay is: $otp";
+
+        $client = new SnsClient([
+            'region' => 'ap-south-1',
+            'credentials' => new Credentials(
+                env('AWS_ACCESS_KEY_ID'),
+                env('AWS_SECRET_ACCESS_KEY')
+            ),
+            'version' => '2010-03-31'
+        ]);
+
+        $client->SetSMSAttributes(
+            [
+                'attributes' => [
+                    'DefaultSenderID' => 'GLOBALSPAY',
+                    'DefaultSMSType' => 'Transactional'
+                ]
+            ]
+        );
+
+        try {
+            $result = $client->publish([
+                'Message' => $message,
+                'PhoneNumber' => "+91$phoneNumber",
+            ]);
+
+            return response()->json(['message' => 'OTP sent successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to send OTP', 'details' => $e->getMessage()], 500);
+        }
     }
 
 }
