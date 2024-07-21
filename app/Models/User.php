@@ -41,6 +41,11 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'referer_id', 'sponsor_id');
     }
 
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referer_id', 'sponsor_id');
+    }
+
     public function getAllReferrals()
     {
         $referrals = collect([]);
@@ -77,6 +82,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Task::class, 'user_tasks')->withTimestamps();
     }
+
     public function bankAccount()
     {
         return $this->hasOne(BankAccount::class);

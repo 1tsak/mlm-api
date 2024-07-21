@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WebSetting;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Task;
 use App\Models\Earning;
 use App\Models\UserTask;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class UserTaskController extends Controller
 {
@@ -50,16 +52,19 @@ class UserTaskController extends Controller
         return response()->json(['message' => 'Task completed successfully'], 200);
     }
 
-    protected function distributeEarnings(User $user, $amount)
+        protected function distributeEarnings(User $user, $amount)
     {
         $referrer = $user->referrer;
-
         $level = 1;
-        $levelLimit =7;
-        $percentages = 0.1; // Example percentages for 3 levels
+        $levelLimit = 7;
+        $levelPercentage = WebSetting::first()->level_percentage / 100; // Convert percentage to decimal
+
+        Log::info("Starting distribution for user: {$user->id} with amount: {$amount}");
 
         while ($referrer && $level <= $levelLimit) {
-            $earningAmount = $amount * $percentages;
+            $earningAmount = $amount * $levelPercentage;
+
+            Log::info("Distributing to referrer: {$referrer->id} at level: {$level} with amount: {$earningAmount}");
 
             Earning::create([
                 'user_id' => $referrer->id,
@@ -70,5 +75,8 @@ class UserTaskController extends Controller
             $referrer = $referrer->referrer;
             $level++;
         }
+
+        Log::info("Finished distribution for user: {$user->id}");
     }
+
 }

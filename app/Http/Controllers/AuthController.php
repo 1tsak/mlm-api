@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Models\User;
+use App\Models\WebSetting;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
@@ -40,18 +41,18 @@ class AuthController extends Controller
             'address' => $request->address,
             'balance' => 0.00,
         ]);
-
+        $referBonus = WebSetting::first()->refer_bonus;
         // Reward the referrer if referer_id is provided
         if ($request->has('referer_id')) {
             $referrer = User::where('sponsor_id', $request->referer_id)->first();
             if ($referrer) {
-                $referrer->balance += 50; // Reward the referrer with 50 units
+                $referrer->balance += $referBonus; // Reward the referrer with 50 units
                 $referrer->save();
 
                 // Record the earning
                 Earning::create([
                     'user_id' => $referrer->id,
-                    'amount' => 50,
+                    'amount' => $referBonus,
                     'description' => 'direct',
                 ]);
             }
